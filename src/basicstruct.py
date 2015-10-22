@@ -7,6 +7,7 @@ from json.decoder import WHITESPACE
 import collections
 
 import six
+from copy import deepcopy
 from itertools import chain
 
 __version__ = '1.0.3'
@@ -28,6 +29,26 @@ class BasicStruct(object):
             if not hasattr(self, key):
                 setattr(self, key, None)
 
+    def _to_dict(self, dict_cls, copy):
+        new_dict = dict_cls()
+        for attr, value in self:
+            if copy:
+                value = deepcopy(value)
+            new_dict[attr] = value
+
+        return new_dict
+
+    def to_dict(self, copy=False):
+        """Convert the struct to a dictionary.
+
+        If `copy == True`, returns a deep copy of the values.
+
+        """
+        return self._to_dict(dict, copy=copy)
+
+    def to_ordered_dict(self, copy=False):
+        return self._to_dict(collections.OrderedDict, copy=copy)
+
     def __repr__(self):
         attrs_str = ', '.join('{0}={1!r}'.format(key, getattr(self, key))
                               for key in self.__slots__)
@@ -36,39 +57,46 @@ class BasicStruct(object):
     def __lt__(self, other):
         if not isinstance(other, type(self)):
             return NotImplemented
-        return self.to_tuple() < other.to_tuple()
+        return self._to_tuple() < other._to_tuple()
 
     def __le__(self, other):
         if not isinstance(other, type(self)):
             return NotImplemented
-        return self.to_tuple() <= other.to_tuple()
+        return self._to_tuple() <= other._to_tuple()
 
     def __gt__(self, other):
         if not isinstance(other, type(self)):
             return NotImplemented
-        return self.to_tuple() > other.to_tuple()
+        return self._to_tuple() > other._to_tuple()
 
     def __ge__(self, other):
         if not isinstance(other, type(self)):
             return NotImplemented
-        return self.to_tuple() >= other.to_tuple()
+        return self._to_tuple() >= other._to_tuple()
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
             return NotImplemented
-        return self.to_tuple() == other.to_tuple()
+        return self._to_tuple() == other._to_tuple()
 
     def __ne__(self, other):
         if not isinstance(other, type(self)):
             return NotImplemented
-        return self.to_tuple() != other.to_tuple()
+        return self._to_tuple() != other._to_tuple()
 
     def __len__(self):
         return len(self.__slots__)
 
+    def __hash__(self):
+        return hash(self._to_tuple())
+
     def __iter__(self):
-        for key in self.__slots__:
-            yield key
+        """Yield pairs of (attrubute_name, value).
+
+        This allows using `dict(my_struct)`.
+
+        """
+        return zip(self.__slots__, self._to_tuple())
 
     def __getitem__(self, key):
         if hasattr(self, key):
@@ -91,24 +119,8 @@ class BasicStruct(object):
                 val = state[attr]
                 setattr(self, attr, val)
 
-    def __hash__(self):
-        return hash(self.to_tuple())
-
-    def to_tuple(self):
+    def _to_tuple(self):
         return tuple(getattr(self, key) for key in self.__slots__)
-
-    def to_dict(self):
-        return {
-            key: getattr(self, key)
-            for key in self.__slots__
-        }
-
-    def to_ordered_dict(self):
-        d = collections.OrderedDict()
-        for key in sorted(self.__slots__):
-            d[key] = getattr(self, key)
-
-        return d
 
 
 class BasicStructEncoder(json.JSONEncoder):
@@ -131,6 +143,7 @@ class BasicStructEncoder(json.JSONEncoder):
             return json.JSONEncoder.default(self, obj)
         except TypeError, e:
             raise e
+
 
 class BasicStructDecoder(json.JSONDecoder):
     def decode(self, obj, _w=WHITESPACE.match):
