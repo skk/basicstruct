@@ -1,8 +1,9 @@
 import six
 import pickle
 import unittest
+import json
 
-from basicstruct import BasicStruct
+from basicstruct import BasicStruct, BasicStructDecoder, BasicStructEncoder
 
 
 class Foo(BasicStruct):
@@ -90,10 +91,6 @@ class MyTestCase(unittest.TestCase):
         f = Foo(1, 'irrelevant')
         self.assertEqual(repr(f), "Foo(x=1, y='irrelevant')")
 
-    def test_pickle(self):
-        f = Foo(1, 'irrelevant')
-        self.assertEqual(f, pickle.loads(pickle.dumps(f)))
-
     def test_hash(self):
         small = Foo(1, 'irrelevant')
         medium = Foo(2, 5)
@@ -104,6 +101,32 @@ class MyTestCase(unittest.TestCase):
         self.assertNotEqual(hash(medium), hash(large))
         self.assertEqual(hash(medium), hash(another_medium))
 
+    def _json_tester(self, obj):
+        json_encoded_obj = json.dumps(obj, cls=BasicStructEncoder)
+        obj_from_json = json.loads(json_encoded_obj, cls=BasicStructDecoder)
+
+        self.assertEqual(obj.to_ordered_dict(), obj_from_json.to_ordered_dict())
+
+    def test_json(self):
+        self._json_tester(Foo(1, 2))
+        self._json_tester(Foo([1, 2, 3], 4))
+        self._json_tester(Foo({'a': 1, 'b': 2}, 4))
+
+    def _pickle_tester(self, obj):
+        pickle_encoded_obj = pickle.dumps(obj)
+        obj_from_pickle = pickle.loads(pickle_encoded_obj)
+
+        self.assertEqual(obj.to_ordered_dict(), obj_from_pickle.to_ordered_dict())
+
+    def test_pickle(self):
+        self._pickle_tester(Foo(1, 2))
+        self._pickle_tester(Foo([1, 2, 3], 4))
+        self._pickle_tester(Foo({'a': 1, 'b': 2}, 4))
+
+    def test_len(self):
+        obj1 = Foo(1, 2)
+        obj2 = Foo([1, 2, 3], 4)
+        self.assertTrue(len(obj1) == len(obj2))
 
 if __name__ == '__main__':
     unittest.main()
