@@ -149,10 +149,10 @@ class BasicStructDecoder(json.JSONDecoder):
     def decode(self, obj, _w=WHITESPACE.match):
         json_obj = json.loads(obj)
 
-        class JSONDecoerTest(BasicStruct):
+        class JSONDecoderTest(BasicStruct):
             __slots__ = json_obj.keys()
 
-        basic_struct_obj = JSONDecoerTest()
+        basic_struct_obj = JSONDecoderTest()
 
         for k, v in json_obj.iteritems():
             setattr(basic_struct_obj, k, v)
