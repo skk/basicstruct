@@ -62,9 +62,9 @@ class BasicStruct(object):
         return self._to_dict(collections.OrderedDict, copy=copy)
 
     def __repr__(self):
-        attrs_str = ', '.join('{0}={1!r}'.format(key, getattr(self, key))
+        attrs_str = six.u(', ').join(six.u('{0}={1!r}').format(key, getattr(self, key))
                               for key in self.__slots__)
-        return '{0}({1})'.format(self.__class__.__name__, attrs_str)
+        return six.u('{0}({1})').format(self.__class__.__name__, attrs_str)
 
     def __lt__(self, other):
         if not isinstance(other, type(self)):
@@ -153,7 +153,7 @@ class BasicStructEncoder(json.JSONEncoder):
         # Let the base class default method raise the TypeError
         try:
             return json.JSONEncoder.default(self, obj)
-        except TypeError, e:
+        except TypeError as e:
             raise e
 
 
@@ -166,7 +166,7 @@ class BasicStructDecoder(json.JSONDecoder):
 
         basic_struct_obj = JSONDecoderTest()
 
-        for k, v in json_obj.iteritems():
+        for k, v in six.iteritems(json_obj):
             setattr(basic_struct_obj, k, v)
 
         return basic_struct_obj
