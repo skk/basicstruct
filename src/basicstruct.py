@@ -11,7 +11,7 @@ from copy import deepcopy
 from itertools import chain
 from collections import Mapping
 
-__version__ = '1.0.4-alpha'
+__version__ = '1.1.0'
 __all__ = ('BasicStruct',)
 
 
